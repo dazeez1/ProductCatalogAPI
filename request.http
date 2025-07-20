@@ -1,0 +1,89 @@
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+    "username": "John Doe",
+    "email": "john@example.com",  
+    "password": "password123",
+    "role": "admin"
+}
+
+POST localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "email": "john@example.com",
+    "password": "password123"
+}
+
+GET http://localhost:3000/users
+Authorization: Bearer <JWT-TOKEN>
+
+POST http://localhost:3000/products
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+
+{
+    "name": "Nike Shoes",
+    "description": "Some Nike shoes Descriptions",
+    "category": "Shoes",
+    "price": 99.99,
+    "stock": 50,
+    "image": "null",
+    "variants": [
+        { "size": "M", "color": "Red", "quantity": 5 },
+        { "size": "L", "color": "Blue", "quantity": 10 }
+    ]
+}
+
+GET http://localhost:3000/products/:id
+
+PUT http://localhost:3000/products/:id
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+
+{
+    "price": 109.99,
+    "stock": 60
+}
+
+DELETE http://localhost:3000/products/:id
+Authorization: Bearer <jwt-token>
+
+GET http://localhost:3000/products?search=Nike
+
+GET http://localhost:3000/products?categories=shoes
+
+GET http://localhost:3000/products?minPrice=50&maxPrice=150
+
+GET http://localhost:3000/products?onSale=true
+
+POST http://localhost:3000/categories
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+
+{
+    "name": "Shoes",
+    "description": "Category Description"
+}
+
+GET http://localhost:3000/categories
+
+GET http://localhost:3000/categories/:id
+
+PUT http://localhost:3000/categories/:id
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+
+{
+    "name": "Sports Shoes",
+    "description": "Sport shoes new description"
+}
+
+DELETE http://localhost:3000/categories/:id
+Authorization: Bearer <jwt-token>
+
+
+
+
+
