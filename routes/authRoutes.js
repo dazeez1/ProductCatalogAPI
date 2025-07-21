@@ -1,3 +1,4 @@
+// Authentication routes for user registration and login
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
@@ -10,6 +11,7 @@ const {
 
 const router = express.Router();
 
+// JWT secret key from environment variables
 const SECRET_KEY = process.env.SECRET_KEY;
 
 /**
@@ -58,14 +60,17 @@ const SECRET_KEY = process.env.SECRET_KEY;
  *       500:
  *         description: Server error
  */
+// Register new user with validation
 router.post("/register", validate(userSchema), async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
 
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser)
       return res.status(400).json({ error: "User already exists" });
 
+    // Create new user
     const newUser = new User({ username, email, password, role });
     await newUser.save();
 
@@ -111,15 +116,20 @@ router.post("/register", validate(userSchema), async (req, res) => {
  *       500:
  *         description: Server error
  */
+// Login user and return JWT token
 router.post("/login", validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Find user by email
     const user = await User.findOne({ email });
 
+    // Check if user exists and password matches
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    // Generate JWT token with user information
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       SECRET_KEY,
@@ -132,4 +142,5 @@ router.post("/login", validate(loginSchema), async (req, res) => {
   }
 });
 
+// Export router
 module.exports = router;

@@ -1,5 +1,6 @@
 const Joi = require("joi");
 
+// User registration schema
 const userSchema = Joi.object({
   username: Joi.string().min(3).max(50).required(),
   email: Joi.string().email().required(),
@@ -7,11 +8,13 @@ const userSchema = Joi.object({
   role: Joi.string().valid("admin", "customer").default("customer"),
 });
 
+// User login schema for authentication
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
 });
 
+// Product creation schema with comprehensive validation
 const productSchema = Joi.object({
   name: Joi.string().min(1).max(200).required(),
   description: Joi.string().max(1000).optional(),
@@ -34,11 +37,13 @@ const productSchema = Joi.object({
     .optional(),
 });
 
+// Category schema for category management
 const categorySchema = Joi.object({
   name: Joi.string().min(1).max(100).required(),
   description: Joi.string().max(500).optional(),
 });
 
+// Product update schema
 const productUpdateSchema = Joi.object({
   name: Joi.string().min(1).max(200).optional(),
   description: Joi.string().max(1000).optional(),
@@ -61,6 +66,7 @@ const productUpdateSchema = Joi.object({
     .optional(),
 });
 
+// Generic validation middleware for request body
 const validate = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.body, {
@@ -83,6 +89,7 @@ const validate = (schema) => {
   };
 };
 
+// Generic validation middleware for query parameters
 const validateQuery = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.query, {
@@ -105,6 +112,7 @@ const validateQuery = (schema) => {
   };
 };
 
+// Query schema for product filtering and search
 const productQuerySchema = Joi.object({
   search: Joi.string().min(1).max(100).optional(),
   categories: Joi.string().min(1).max(100).optional(),
@@ -117,10 +125,12 @@ const productQuerySchema = Joi.object({
   createdBefore: Joi.date().iso().optional(),
 });
 
+// Query schema for report endpoints
 const reportQuerySchema = Joi.object({
   threshold: Joi.number().integer().min(1).max(1000).optional(),
 });
 
+// Export all validation schemas and middleware functions
 module.exports = {
   validate,
   validateQuery,

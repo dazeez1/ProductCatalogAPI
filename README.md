@@ -66,7 +66,7 @@ This is a RESTful API for managing a product catalog, designed to support an e-c
 
   ```json
   {
-    "name": "John Doe",
+    "username": "John Doe",
     "email": "john@example.com",
     "password": "secertpassword",
     "role": "admin"

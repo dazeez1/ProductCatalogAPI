@@ -1,11 +1,15 @@
+// Authentication middleware for JWT token validation and role-based access control
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
+// Get JWT secret key from environment variables
 const SECRET_KEY = process.env.SECRET_KEY;
 
+// Middleware to authenticate JWT tokens from request headers
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
+  // Check if Authorization header exists and starts with "Bearer "
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized: No token provided" });
   }
@@ -13,6 +17,7 @@ const authenticate = (req, res, next) => {
   const token = authHeader.split(" ")[1];
 
   try {
+    // Verify and decode the JWT token
     const decoded = jwt.verify(token, SECRET_KEY);
     req.user = decoded;
     next();
@@ -21,6 +26,7 @@ const authenticate = (req, res, next) => {
   }
 };
 
+// Middleware factory for role-based authorization
 const authorize = (role) => {
   return (req, res, next) => {
     if (!req.user || req.user.role !== role) {
@@ -32,4 +38,5 @@ const authorize = (role) => {
   };
 };
 
+// Export middleware functions
 module.exports = { authenticate, authorize };

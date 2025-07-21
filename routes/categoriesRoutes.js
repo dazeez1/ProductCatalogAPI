@@ -1,3 +1,4 @@
+// Category routes for CRUD operations on product categories
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const Category = require("../models/categories");
@@ -10,6 +11,7 @@ const {
 
 const router = express.Router();
 
+// Rate limiting to prevent abuse (100 requests per 10 minutes)
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 100,
@@ -17,6 +19,7 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Admin authorization middleware
 const isAdmin = authorize("admin");
 
 /**
@@ -53,6 +56,7 @@ const isAdmin = authorize("admin");
  *       403:
  *         description: Forbidden - Admin access required
  */
+// Create new category
 router.post(
   "/",
   authenticate,
@@ -68,6 +72,7 @@ router.post(
   }
 );
 
+// Get all categories
 router.get("/", async (req, res) => {
   try {
     const categories = await Category.find();
@@ -77,6 +82,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Get single category by ID
 router.get("/:id", async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
@@ -87,6 +93,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Update category by ID
 router.put("/:id", authenticate, isAdmin, async (req, res) => {
   try {
     const updatedCategory = await Category.findByIdAndUpdate(
@@ -100,6 +107,7 @@ router.put("/:id", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// Delete category by ID
 router.delete("/:id", authenticate, isAdmin, async (req, res) => {
   try {
     await Category.findByIdAndDelete(req.params.id);
@@ -109,4 +117,5 @@ router.delete("/:id", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// Export router
 module.exports = router;

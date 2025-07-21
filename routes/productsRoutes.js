@@ -1,3 +1,4 @@
+// Product routes for CRUD operations, search, filtering, and reporting
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const Product = require("../models/products");
@@ -15,6 +16,7 @@ const {
 
 const router = express.Router();
 
+// Rate limiting to prevent abuse (100 requests per 10 minutes)
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 100,
@@ -22,8 +24,10 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Admin authorization middleware
 const isAdmin = authorize("admin");
 
+// Apply rate limiting to all product routes
 router.use(limiter);
 
 /**
@@ -94,6 +98,7 @@ router.use(limiter);
  *       403:
  *         description: Forbidden - Admin access required
  */
+// Create new product or update stock for existing product
 router.post(
   "/",
   authenticate,
@@ -103,6 +108,7 @@ router.post(
     try {
       let productData = req.body;
 
+      // Handle category creation if provided as string name
       if (typeof productData.category === "string") {
         let category = await Category.findOne({
           name: { $regex: new RegExp(`^${productData.category}$`, "i") },
@@ -115,6 +121,7 @@ router.post(
         productData.category = category._id;
       }
 
+      // Check if product already exists with same name, category, and variants
       const existingProduct = await Product.findOne({
         name: { $regex: new RegExp(`^${productData.name}$`, "i") },
         category: productData.category,
@@ -123,8 +130,10 @@ router.post(
       });
 
       if (existingProduct) {
+        // Update stock for existing product
         existingProduct.stock += productData.stock || 0;
 
+        // Update variant quantities
         productData.variants.forEach((newVariant) => {
           let existingVariant = existingProduct.variants.find(
             (variant) =>
@@ -146,6 +155,7 @@ router.post(
         });
       }
 
+      // Create new product
       const product = await Product.create(productData);
       res.status(201).json(product);
     } catch (error) {
@@ -243,10 +253,12 @@ router.post(
  *       500:
  *         description: Server error
  */
+// Get products with search, filtering, and pagination
 router.get("/", validateQuery(productQuerySchema), async (req, res) => {
   try {
     let query = {};
 
+    // Build search query for name, color, or size
     if (req.query.search || req.query.color || req.query.size) {
       query.$or = [];
 
@@ -267,6 +279,7 @@ router.get("/", validateQuery(productQuerySchema), async (req, res) => {
       }
     }
 
+    // Filter by category
     if (req.query.categories) {
       const category = await Category.findOne({
         name: { $regex: new RegExp(`^${req.query.categories}$`, "i") },
@@ -281,16 +294,19 @@ router.get("/", validateQuery(productQuerySchema), async (req, res) => {
       query.category = category._id;
     }
 
+    // Filter by price range
     if (req.query.minPrice || req.query.maxPrice) {
       query.price = {};
       if (req.query.minPrice) query.price.$gte = parseFloat(req.query.minPrice);
       if (req.query.maxPrice) query.price.$lte = parseFloat(req.query.maxPrice);
     }
 
+    // Filter products on sale
     if (req.query.onSale === "true") {
       query.isOnSale = true;
     }
 
+    // Filter by creation date range
     if (req.query.createdAfter) {
       query.createdAt = { $gte: new Date(req.query.createdAfter) };
     }
@@ -301,6 +317,7 @@ router.get("/", validateQuery(productQuerySchema), async (req, res) => {
       };
     }
 
+    // Execute query with population and field selection
     const products = await Product.find(query)
       .populate("category", "name")
       .select("-_stock")
@@ -312,6 +329,7 @@ router.get("/", validateQuery(productQuerySchema), async (req, res) => {
   }
 });
 
+// Get single product by ID
 router.get("/:id", authenticate, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).select("-_stock");
@@ -322,10 +340,12 @@ router.get("/:id", authenticate, async (req, res) => {
   }
 });
 
+// Update product by ID
 router.put("/:id", authenticate, isAdmin, async (req, res) => {
   try {
     let productData = req.body;
 
+    // Handle category updates
     if (typeof productData.category === "string") {
       const category = await Category.findOne({
         name: { $regex: new RegExp(`^${productData.category}$`, "i") },
@@ -340,14 +360,17 @@ router.put("/:id", authenticate, isAdmin, async (req, res) => {
       }
     }
 
+    // Find existing product
     let existingProduct = await Product.findById(req.params.id);
     if (!existingProduct)
       return res.status(404).json({ error: "Product not found" });
 
+    // Update stock if provided
     if (productData.stock) {
       existingProduct.stock += productData.stock;
     }
 
+    // Update variants if provided
     if (productData.variants && productData.variants.length > 0) {
       productData.variants.forEach((newVariant) => {
         let existingVariant = existingProduct.variants.find(
@@ -364,8 +387,8 @@ router.put("/:id", authenticate, isAdmin, async (req, res) => {
       });
     }
 
+    // Apply all updates
     Object.assign(existingProduct, productData);
-
     await existingProduct.save();
 
     res.json({
@@ -377,6 +400,7 @@ router.put("/:id", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// Delete product by ID
 router.delete("/:id", authenticate, isAdmin, async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
@@ -387,6 +411,7 @@ router.delete("/:id", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// Get low stock report
 router.get("/reports/low-stock", authenticate, isAdmin, async (req, res) => {
   try {
     const threshold = parseInt(req.query.threshold) || 10;
@@ -405,6 +430,7 @@ router.get("/reports/low-stock", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// Get products on sale report (admin only)
 router.get("/reports/on-sale", authenticate, isAdmin, async (req, res) => {
   try {
     const saleProducts = await Product.find({ isOnSale: true })
@@ -412,6 +438,7 @@ router.get("/reports/on-sale", authenticate, isAdmin, async (req, res) => {
       .select("name category price salePrice discountPercentage stock")
       .lean();
 
+    // Calculate total discount value across all sale products
     const totalDiscountValue = saleProducts.reduce((total, product) => {
       return total + (product.price - product.salePrice) * product.stock;
     }, 0);
@@ -426,13 +453,16 @@ router.get("/reports/on-sale", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// Get inventory summary report (admin only)
 router.get("/reports/inventory", authenticate, isAdmin, async (req, res) => {
   try {
     const totalProducts = await Product.countDocuments();
+
     const totalStock = await Product.aggregate([
       { $group: { _id: null, totalStock: { $sum: "$stock" } } },
     ]);
 
+    // Get category-wise summary with product counts and stock totals
     const categorySummary = await Product.aggregate([
       {
         $lookup: {
@@ -462,4 +492,5 @@ router.get("/reports/inventory", authenticate, isAdmin, async (req, res) => {
   }
 });
 
+// Export router
 module.exports = router;
